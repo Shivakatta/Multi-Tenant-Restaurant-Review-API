@@ -93,7 +93,7 @@ pytest tests/ -v --cov=src --cov-report=term-missing
 
 ---
 
-## 🚀 Usage Example
+##  Usage Example
 
 ```python
 from src.api.feedback_handler import FeedbackHandler
@@ -275,10 +275,10 @@ merge: resolve conflict between logging and error handling
 
 ##  Bonus Features (Optional)
 
-* ✅ Caching (tenant lookup)
-* ✅ Rate limiting per tenant
-* ✅ FastAPI/Flask server
-* ✅ CI/CD pipeline
+* 1 Caching (tenant lookup)
+* 2 Rate limiting per tenant
+* 3 FastAPI/Flask server
+* 4CI/CD pipeline
 
 ---
 
@@ -319,4 +319,3 @@ This project demonstrates:
 
 ---
 
-**Built as part of a backend engineering coding exercise.**

@@ -104,17 +104,28 @@ class FeedbackHandler:
             extra={"customer": customer_name, "rating": rating},
         )
         
-        if not api_key or not isinstance(api_key, str):
-            logger.error("Invalid API key provided")
-            raise InvalidAPIKeyException("API key is required")
+        try:
+            if not api_key or not isinstance(api_key, str):
+                raise InvalidAPIKeyException("API key is required")
+        except InvalidAPIKeyException as e:
+            logger.error(f"Authentication failed: {str(e)}", extra={"error_type": "auth"})
+            raise
 
-        tenant = self.load_tenant_by_api_key(api_key)
+        try:
+            tenant = self.load_tenant_by_api_key(api_key)
+        except TenantNotFoundException as e:
+            logger.error(f"Tenant not found: {str(e)}", extra={"error_type": "tenant"})
+            raise
 
-        if not isinstance(rating, int) or rating < 1 or rating > 5:
-            raise ValidationException("rating must be an integer between 1 and 5")
+        try:
+            if not isinstance(rating, int) or rating < 1 or rating > 5:
+                raise ValidationException("rating must be an integer between 1 and 5")
 
-        if not comment or not comment.strip():
-            raise ValidationException("comment must not be empty")
+            if not comment or not comment.strip():
+                raise ValidationException("comment must not be empty")
+        except ValidationException as e:
+            logger.error(f"Validation failed: {str(e)}", extra={"error_type": "validation"})
+            raise
 
         sentiment = None
         if tenant.sentiment_analysis:
@@ -131,13 +142,17 @@ class FeedbackHandler:
                 )
                 sentiment = None
 
-        daily_count = self.db_client.get_daily_submission_count(tenant.tenant_id)
-        if daily_count >= 100:
-            logger.warning(
-                "Rate limit exceeded",
-                extra={"tenant_id": tenant.tenant_id, "daily_submissions": daily_count},
-            )
-            raise RateLimitException("Daily feedback submission limit exceeded")
+        try:
+            daily_count = self.db_client.get_daily_submission_count(tenant.tenant_id)
+            if daily_count >= 100:
+                logger.warning(
+                    "Rate limit exceeded",
+                    extra={"tenant_id": tenant.tenant_id, "daily_submissions": daily_count},
+                )
+                raise RateLimitException("Daily feedback submission limit exceeded")
+        except RateLimitException as e:
+            logger.error(f"Rate limit error: {str(e)}", extra={"error_type": "rate_limit"})
+            raise
 
         feedback = Feedback(
             tenant_id=tenant.tenant_id,
